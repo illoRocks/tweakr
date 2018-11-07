@@ -23,6 +23,7 @@ Tweakr <- R6Class(
                           func_predict,
                           func_eval,
                           k=5,
+                          sample_method="cv",
                           folds=NULL,
                           parallel_strategy=NULL) {
 
@@ -42,10 +43,10 @@ Tweakr <- R6Class(
       if (is.null(params))
         stop("you have to specify `params`")
 
-      if (all(names(formals(func_train)) != c("train","param")) ||
-          all(names(formals(func_predict)) != c("fit","test")) ||
-          all(names(formals(func_eval)) != c("pred","test")))
-        stop("Wrong arguments: func_train(train, param); func_predict(fit, test); func_eval(pred, test)")
+      # check for wrong arguments
+      check_arguments(func_train, c("train","param"))
+      check_arguments(func_predict, c("fit","test"))
+      check_arguments(func_eval, c("pred","test"))
 
       # assign functions
       self$func_train <- func_train
@@ -194,9 +195,23 @@ Tweakr <- R6Class(
 #' @param train_set Training data
 #' @param params List of parameters
 #' @param k Number of folds.
-#' @param func_train Function to train a model.
-#' @param func_predict Function to predict the out of fold data.
-#' @param func_eval Function to evaluate predictions.
+#' @param folds custom folds.
+#' @param func_train Function to train a model. The arguments must be `train` and `param`.
+#' @param func_predict Function to predict the out of fold data. The arguments must be `fit` and `test`.
+#' @param func_eval Function to evaluate predictions. The arguments must be `pred` and `test`.
+#' @param run Functions should be excecuted or not.
+#'
+#' @example
+#'
+#' library(rpart)
+#' set.seed(123)
+#'
+#' twk <- tweakr(train_set = iris,
+#'               params = list(cp=c(.01,.05)),
+#'               k = 5,
+#'               func_train = function(train, param) rpart(Species~. , train, control = rpart.control(cp = param$cp)),
+#'               func_predict  = function(fit, test) predict(fit, test, type = "class"),
+#'               func_eval = function(pred, test) sum(pred == test$Species) / nrow(test))
 #'
 #' @export
 tweakr <- function(train_set,
@@ -205,7 +220,8 @@ tweakr <- function(train_set,
                    folds=NULL,
                    func_train,
                    func_predict,
-                   func_eval) {
+                   func_eval,
+                   run=TRUE) {
 
   twk <- Tweakr$new(train_set=train_set,
                     params=params,
@@ -215,9 +231,11 @@ tweakr <- function(train_set,
                     func_predict=func_predict,
                     func_eval=func_eval)
 
-  twk$train_model()
-  twk$predict_model()
-  twk$eval_model()
+  if(run) {
+    twk$train_model()
+    twk$predict_model()
+    twk$eval_model()
+  }
 
   invisible(twk)
 }
