@@ -28,12 +28,15 @@ Tweakr <- R6Class(
                           parallel_strategy=NULL) {
 
       # check for missing values
-      if (missing(func_train) && missing(func_predict) && missing(func_eval))
-        stop("you have to specify `func_train`, `func_predict`, `func_eval`")
+      check_missing(train_set)
+      check_missing(func_train)
+      check_missing(func_predict)
+      check_missing(func_eval)
 
-      # check for missing values
-      if (missing(train_set))
-        stop("you have to specify `train_set`")
+      # check for wrong arguments
+      check_arguments(func_train, c("train","param"))
+      check_arguments(func_predict, c("fit","test"))
+      check_arguments(func_eval, c("pred","test"))
 
       # check for missing values
       if (is.null(k) && is.null(folds))
@@ -43,10 +46,6 @@ Tweakr <- R6Class(
       if (is.null(params))
         stop("you have to specify `params`")
 
-      # check for wrong arguments
-      check_arguments(func_train, c("train","param"))
-      check_arguments(func_predict, c("fit","test"))
-      check_arguments(func_eval, c("pred","test"))
 
       # assign functions
       self$func_train <- func_train
@@ -145,7 +144,6 @@ Tweakr <- R6Class(
       if (missing(value))
         return(private$..params)
 
-      print(value)
       if (is.list(value))
         value <- expand.grid(value)
 
