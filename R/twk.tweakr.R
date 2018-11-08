@@ -2,7 +2,7 @@
 #' @importFrom R6 R6Class
 #' @importFrom tibble tibble as_tibble
 #' @importFrom dplyr mutate_if select summarise inner_join bind_cols group_by
-#' @importFrom purrr pmap_dfr map_dfr
+#' @importFrom purrr pmap_dfr map_dfr map_chr
 
 Tweakr <- R6Class(
   classname = "tweaker",
@@ -78,6 +78,8 @@ Tweakr <- R6Class(
 
       self$iterations_trained <- pmap_dfr(self$iterations, do_train)
 
+      if(any(map_chr(self$iterations_trained$fit, class) %in% c("numeric","character")))
+        warning("returned element of train function is not a model")
     },
 
     # predict model
