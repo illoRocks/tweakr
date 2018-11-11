@@ -60,10 +60,9 @@ Tweakr <- R6Class(
 
       # folds for cross validation
       if(is.null(folds)) {
-        n <- nrow(train_set)
-        self$folds_in_test <- split(seq_len(n), sample(rep(1:k, length.out = n)))
+        self$folds_in_train <- randomly(train_set, sample_method, k)
       } else {
-        self$folds_in_test <- folds
+        self$folds_in_train <- folds
       }
 
     },
@@ -71,9 +70,9 @@ Tweakr <- R6Class(
     # train model
     train_model = function() {
 
-      do_train <- function(in_test, param, id, ...) {
-        fit <- self$func_train(self$train_set[-in_test, ], param)
-        tibble(id=id, fit=list(fit), in_test=list(in_test))
+      do_train <- function(in_train, param, id, ...) {
+        fit <- self$func_train(self$train_set[in_train, ], param)
+        tibble(id=id, fit=list(fit), in_train=list(in_train))
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations, do_train)
@@ -85,9 +84,9 @@ Tweakr <- R6Class(
     # predict model
     predict_model = function() {
 
-      do_predict <- function(in_test, param, id, fit, ...) {
-        pred <- self$func_predict(fit, (self$train_set[in_test, ]))
-        tibble(id=id, in_test=list(in_test), fit=list(fit), pred=list(pred))
+      do_predict <- function(in_train, param, id, fit, ...) {
+        pred <- self$func_predict(fit, (self$train_set[-in_train, ]))
+        tibble(id=id, in_train=list(in_train), fit=list(fit), pred=list(pred))
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations_trained, do_predict)
@@ -97,9 +96,9 @@ Tweakr <- R6Class(
     # eval model
     eval_model = function() {
 
-      do_eval <- function(in_test, param, id, fit, pred, ...) {
-        eval <- self$func_eval(pred, self$train_set[in_test, ])
-        tibble(id=id, in_test=list(in_test), fit=list(fit), pred=list(pred), eval=eval)
+      do_eval <- function(in_train, param, id, fit, pred, ...) {
+        eval <- self$func_eval(pred, self$train_set[-in_train, ])
+        tibble(id=id, in_train=list(in_train), fit=list(fit), pred=list(pred), eval=eval)
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations_trained, do_eval)
@@ -118,7 +117,7 @@ Tweakr <- R6Class(
   # private parameters
   private = list(
     ..params = tibble(),
-    ..folds_in_test = NULL,
+    ..folds_in_train = NULL,
     ..train_set = NULL
   ),
 
@@ -127,7 +126,7 @@ Tweakr <- R6Class(
     iterations = function() {
 
       pmap_dfr(self$params, function(id, param, ...) {
-        map_dfr(self$folds_in_test, function(in_test) tibble(id=id, param=list(param), in_test=list(in_test)))
+        map_dfr(self$folds_in_train, function(in_train) tibble(id=id, param=list(param), in_train=list(in_train)))
       })
 
     },
@@ -161,12 +160,12 @@ Tweakr <- R6Class(
 
     },
 
-    folds_in_test = function(value) {
+    folds_in_train = function(value) {
 
       if (missing(value))
-        return(private$..folds_in_test)
+        return(private$..folds_in_train)
 
-      private$..folds_in_test <- value
+      private$..folds_in_train <- value
 
     },
 
