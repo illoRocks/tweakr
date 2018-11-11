@@ -13,11 +13,19 @@ test_that("train rpart with iris data", {
                 func_predict  = function(fit, test) predict(fit, test, type = "class"),
                 func_eval = function(pred, test) sum(pred == test$Species) / nrow(test))
 
+  twk2 <- tweakr(train_set = iris,
+                params = list(cp=c(.01,.05)),
+                k = 50,
+                func_train = function(train, param) rpart(Species~. , train, control = rpart.control(cp = param$cp)),
+                func_predict  = function(fit, test) predict(fit, test, type = "class"),
+                func_eval = function(pred, test) sum(pred == test$Species) / nrow(test))
+
   expect_is(twk, "tweaker")
   expect_is(twk$result, "data.frame")
   expect_named(twk$result, c("eval","fit","pred","cp"))
   expect_equal(round(twk$result$eval, 2), c(0.92, 0.92))
   expect_length(twk$folds_in_train, 5)
+  expect_length(twk2$folds_in_train, 50)
 
 })
 

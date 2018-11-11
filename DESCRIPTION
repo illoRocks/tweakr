@@ -17,5 +17,6 @@ Imports:
     tibble,
     dplyr,
     purrr,
-    glue
+    glue,
+    progress
 RoxygenNote: 6.1.0

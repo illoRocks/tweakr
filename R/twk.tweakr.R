@@ -3,6 +3,7 @@
 #' @importFrom tibble tibble as_tibble
 #' @importFrom dplyr mutate_if select summarise inner_join bind_cols group_by
 #' @importFrom purrr pmap_dfr map_dfr map_chr
+#' @importFrom progress progress_bar
 
 Tweakr <- R6Class(
   classname = "tweaker",
@@ -58,7 +59,7 @@ Tweakr <- R6Class(
 
       # folds for cross validation
       if(is.null(folds)) {
-        self$folds_in_train <- randomly(train_set, sample_method, k)
+        self$folds_in_train <- randomly(train_set, sample_method, k=k)
       } else {
         self$folds_in_train <- folds
       }
@@ -73,12 +74,19 @@ Tweakr <- R6Class(
     # train model
     train_model = function() {
 
+      if(self$verbose)
+        pb <- progress_bar$new(format="train model [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
+
       do_train <- function(in_train, param, id, ...) {
         fit <- self$func_train(self$train_set[in_train, ], param)
+        if(self$verbose) pb$tick()
         tibble(id=id, fit=list(fit), in_train=list(in_train))
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations, do_train)
+
+      if(self$verbose)
+        pb$terminate()
 
       if(any(map_chr(self$iterations_trained$fit, class) %in% c("numeric","character")))
         warning("returned element of train function is not a model")
@@ -87,24 +95,38 @@ Tweakr <- R6Class(
     # predict model
     predict_model = function() {
 
+      if(self$verbose)
+        pb <- progress_bar$new(format="predict test [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
+
       do_predict <- function(in_train, param, id, fit, ...) {
         pred <- self$func_predict(fit, (self$train_set[-in_train, ]))
+        if(self$verbose) pb$tick()
         tibble(id=id, in_train=list(in_train), fit=list(fit), pred=list(pred))
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations_trained, do_predict)
+
+      if(self$verbose)
+        pb$terminate()
 
     },
 
     # eval model
     eval_model = function() {
 
+      if(self$verbose)
+        pb <- progress_bar$new(format="evaluate model [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
+
       do_eval <- function(in_train, param, id, fit, pred, ...) {
         eval <- self$func_eval(pred, self$train_set[-in_train, ])
+        if(self$verbose) pb$tick()
         tibble(id=id, in_train=list(in_train), fit=list(fit), pred=list(pred), eval=eval)
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations_trained, do_eval)
+
+      if(self$verbose)
+        pb$terminate()
 
     },
 
