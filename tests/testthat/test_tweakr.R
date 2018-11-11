@@ -32,7 +32,6 @@ test_that("test wrong arguments in functions", {
 
 })
 
-
 test_that("test missing arguments in tweakr", {
 
   expect_error(tweakr(params = list(cp=c(.01,.05)),
@@ -42,3 +41,17 @@ test_that("test missing arguments in tweakr", {
                       func_eval = function(pred, test) 1))
 
 })
+
+test_that("test tweak_sample", {
+
+  folds1 <- randomly(iris,"cv", k=30)
+  folds2 <- randomly(iris)
+
+  expect_length(folds1, 30)
+  expect_length(folds2, 5)
+  expect_equal(range(unlist(folds1)), c(1,150))
+
+})
+
+
+
