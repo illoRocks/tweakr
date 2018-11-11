@@ -40,7 +40,7 @@ Tweakr <- R6Class(
 
       # check for missing values
       if (is.null(k) && is.null(folds))
-        stop("you have to specify `k` or `params`")
+        stop("you have to specify `k` or `folds`")
 
       # check for missing values
       if (is.null(params))
