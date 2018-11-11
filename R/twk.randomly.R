@@ -26,12 +26,9 @@ randomly <- function(data, method="cv", ...) {
 
   if (method=="cv") {
 
-    if (is.null(args$k))
-      args$k <- 5
-
+    k <- get_value(args$k, 5)
     n <- nrow(data)
-    in_test <- split(seq_len(n), sample(rep(1:args$k, length.out = n)))
-
+    in_test <- split(seq_len(n), sample(rep(1:k, length.out = n)))
     return(map(in_test, ~(1:n)[-.x]))
 
   }

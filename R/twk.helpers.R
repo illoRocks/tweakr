@@ -15,3 +15,11 @@ check_missing <- function(func) {
 
   return(NULL)
 }
+
+# if null then get default value
+get_value <- function(val, default) {
+  if(is.null(val))
+    return(default)
+  else
+    return(val)
+}
