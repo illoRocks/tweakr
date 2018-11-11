@@ -5,7 +5,7 @@
 \title{tweakr}
 \usage{
 tweakr(train_set, params, k, folds = NULL, func_train, func_predict,
-  func_eval, run = TRUE)
+  func_eval, run = TRUE, ...)
 }
 \arguments{
 \item{train_set}{Training data}
@@ -23,10 +23,25 @@ tweakr(train_set, params, k, folds = NULL, func_train, func_predict,
 \item{func_eval}{Function to evaluate predictions. The arguments must be `pred` and `test`.}
 
 \item{run}{Functions should be excecuted or not.}
+
+\item{...}{Additional arguments for Tweakr}
 }
 \description{
 Parametertuning
 }
 \details{
 Parametrtuning for custom models.
+}
+\examples{
+
+library(rpart)
+set.seed(123)
+
+twk <- tweakr(train_set = iris,
+              params = list(cp=c(.01,.05)),
+              k = 5,
+              func_train = function(train, param) rpart(Species~. , train, control = rpart.control(cp = param$cp)),
+              func_predict  = function(fit, test) predict(fit, test, type = "class"),
+              func_eval = function(pred, test) sum(pred == test$Species) / nrow(test))
+
 }

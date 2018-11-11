@@ -21,6 +21,25 @@ test_that("train rpart with iris data", {
 
 })
 
+test_that("test output", {
+
+  expect_output(tweakr(train_set = iris,
+                       params = list(a=c(1)),
+                       func_train = function(train, param) lm(as.numeric(Species)~.,train),
+                       func_predict  = function(fit, test) 1,
+                       func_eval = function(pred, test) 1),
+                ".*folds: 5.*iterations: 1.*")
+
+  expect_output(tweakr(train_set = iris,
+                       params = list(a=c(1)),
+                       verbose=0,
+                       func_train = function(train, param) lm(as.numeric(Species)~.,train),
+                       func_predict  = function(fit, test) 1,
+                       func_eval = function(pred, test) 1),
+                NA)
+
+})
+
 test_that("test wrong arguments in functions", {
 
   expect_error(tweakr(train_set = iris,

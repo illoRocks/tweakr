@@ -12,6 +12,7 @@ Tweakr <- R6Class(
     func_train = NULL,
     func_predict = NULL,
     func_eval = NULL,
+    verbose = NULL,
 
     # iterations
     iterations_trained = NULL,
@@ -25,7 +26,8 @@ Tweakr <- R6Class(
                           k=5,
                           sample_method="cv",
                           folds=NULL,
-                          parallel_strategy=NULL) {
+                          parallel_strategy=NULL,
+                          verbose=1) {
 
       # check for missing values
       check_missing(train_set)
@@ -46,17 +48,13 @@ Tweakr <- R6Class(
       if (is.null(params))
         stop("you have to specify `params`")
 
-
-      # assign functions
+      # assign arguments
       self$func_train <- func_train
       self$func_predict <- func_predict
       self$func_eval <- func_eval
-
-      # assign params
       self$params <- params
-
-      # assign data
       self$train_set <- train_set
+      self$verbose <- verbose
 
       # folds for cross validation
       if(is.null(folds)) {
@@ -64,6 +62,11 @@ Tweakr <- R6Class(
       } else {
         self$folds_in_train <- folds
       }
+
+      # show infos
+      glat_if(self$verbose,
+             "folding strategy: {sample_method} (folds: {length(self$folds_in_train)})\n",
+             "number of iterations: {nrow(self$params)} (parameters) x {length(self$folds_in_train)} (folds)\n")
 
     },
 
@@ -199,8 +202,9 @@ Tweakr <- R6Class(
 #' @param func_predict Function to predict the out of fold data. The arguments must be `fit` and `test`.
 #' @param func_eval Function to evaluate predictions. The arguments must be `pred` and `test`.
 #' @param run Functions should be excecuted or not.
+#' @param ... Additional arguments for Tweakr
 #'
-#' @example
+#' @examples
 #'
 #' library(rpart)
 #' set.seed(123)
@@ -220,7 +224,8 @@ tweakr <- function(train_set,
                    func_train,
                    func_predict,
                    func_eval,
-                   run=TRUE) {
+                   run=TRUE,
+                   ...) {
 
   twk <- Tweakr$new(train_set=train_set,
                     params=params,
@@ -228,7 +233,8 @@ tweakr <- function(train_set,
                     folds=folds,
                     func_train=func_train,
                     func_predict=func_predict,
-                    func_eval=func_eval)
+                    func_eval=func_eval,
+                    ...)
 
   if(run) {
     twk$train_model()

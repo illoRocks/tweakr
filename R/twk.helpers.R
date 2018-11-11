@@ -1,3 +1,6 @@
+#' @importFrom glue glue
+NULL
+
 # small wrapper to check argument names
 check_arguments <- function(func, expected_names) {
 
@@ -18,8 +21,16 @@ check_missing <- function(func) {
 
 # if null then get default value
 get_value <- function(val, default) {
+
   if(is.null(val))
     return(default)
   else
     return(val)
+}
+
+# print in dependecne of the condition
+glat_if <- function(condition, ..., .envir=parent.frame()) {
+
+  if(condition)
+    cat(glue(..., .envir=.envir), "\n")
 }
