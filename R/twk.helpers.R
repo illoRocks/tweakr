@@ -11,9 +11,9 @@ check_arguments <- function(func, expected_names) {
 }
 
 # small wrapper to check if parameter is missing
-check_missing <- function(func) {
+check_missing <- function(value) {
 
-  if(missing(func))
+  if(missing(value) || is.null(value))
     stop(paste0("you have to specify `",deparse(substitute(func)),"`"))
 
   return(NULL)

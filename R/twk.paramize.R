@@ -9,6 +9,7 @@ NULL
 #' @param params list containing parameters.
 #' @param search_method search method can be grid or random.
 #' @param search_len length of random paramters.
+#' @param ... not used
 #'
 #' @return data.frame with parameters.
 #'
@@ -19,7 +20,7 @@ NULL
 #' paramize(list(a=c("c","d"),b=c(3,4)), "random", 10)
 #'
 #' @export
-paramize <- function(params, search_method="grid", search_len=NULL) {
+paramize <- function(params, search_method="grid", search_len=NULL, ...) {
 
   if(is.data.frame(params))
     return(params)
