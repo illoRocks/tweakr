@@ -5,20 +5,74 @@
 #' @importFrom purrr pmap_dfr map_dfr map_chr
 #' @importFrom progress progress_bar
 
-Tweakr <- R6Class(
-  classname = "tweaker",
+Tweakr <- R6Class("tweaker",
+
+  private = list(
+    ..params = tibble(),
+    ..folds_in_train = NULL,
+    ..train_set = NULL
+  ),
+
+  active = list(
+
+    iterations = function() {
+
+      pmap_dfr(self$params, function(id, param, ...) {
+        map_dfr(self$folds_in_train, function(in_train) tibble(id=id, param=list(param), in_train=list(in_train)))
+      })
+
+    },
+
+    train_set = function(value) {
+
+      if (missing(value))
+        return(private$..train_set)
+
+      private$..train_set <- value
+
+    },
+
+    params = function(value) {
+
+      if (missing(value))
+        return(private$..params)
+
+      private$..params <- pmap_dfr(value, function(...) {
+        tibble(param=list(list(...)), id=paste(list(...), collapse="_"))
+      })
+
+    },
+
+    folds_in_train = function(value) {
+
+      if (missing(value))
+        return(private$..folds_in_train)
+
+      private$..folds_in_train <- value
+
+    },
+
+    result = function(value) {
+
+      if (!missing(value))
+        stop("$result is read only")
+
+      res <- summarise(group_by(self$iterations_trained, id), eval=mean(eval), fit=list(fit), pred=list(pred))
+      res <- inner_join(res, self$params, by="id")
+      res <- bind_cols(res, map_dfr(res$param, as_tibble))
+      select(res, -param, -id)
+
+    }
+
+  ),
   public = list(
 
-    # custom functions
     func_train = NULL,
     func_predict = NULL,
     func_eval = NULL,
     verbose = NULL,
-
-    # iterations
     iterations_trained = NULL,
 
-    # Initialize will create a Tweaker
     initialize = function(train_set,
                           params,
                           func_train,
@@ -35,19 +89,14 @@ Tweakr <- R6Class(
       check_missing(func_train)
       check_missing(func_predict)
       check_missing(func_eval)
+      check_missing(params)
+      if (is.null(k) && is.null(folds))
+        stop("you have to specify `k` or `folds`")
 
       # check for wrong arguments
       check_arguments(func_train, c("train","param"))
       check_arguments(func_predict, c("fit","test"))
       check_arguments(func_eval, c("pred","test"))
-
-      # check for missing values
-      if (is.null(k) && is.null(folds))
-        stop("you have to specify `k` or `folds`")
-
-      # check for missing values
-      if (is.null(params))
-        stop("you have to specify `params`")
 
       # assign arguments
       self$func_train <- func_train
@@ -137,75 +186,6 @@ Tweakr <- R6Class(
       invisible(self)
     }
 
-  ),
-
-  # private parameters
-  private = list(
-    ..params = tibble(),
-    ..folds_in_train = NULL,
-    ..train_set = NULL
-  ),
-
-  active = list(
-
-    iterations = function() {
-
-      pmap_dfr(self$params, function(id, param, ...) {
-        map_dfr(self$folds_in_train, function(in_train) tibble(id=id, param=list(param), in_train=list(in_train)))
-      })
-
-    },
-
-    train_set = function(value) {
-
-      if (missing(value))
-        return(private$..train_set)
-
-      private$..train_set <- value
-
-    },
-
-    params = function(value) {
-
-      if (missing(value))
-        return(private$..params)
-
-      if (is.list(value))
-        value <- expand.grid(value)
-
-      value <- as_tibble(value)
-      value <- mutate_if(value, is.factor, as.character)
-      value <- select(value, order(colnames(value)))
-
-      value <- pmap_dfr(value, function(...) {
-        tibble(param=list(list(...)), id=paste(list(...), collapse="_"))
-      })
-
-      private$..params <- value
-
-    },
-
-    folds_in_train = function(value) {
-
-      if (missing(value))
-        return(private$..folds_in_train)
-
-      private$..folds_in_train <- value
-
-    },
-
-    result = function(value) {
-
-      if (!missing(value))
-        stop("$result is read only")
-
-      res <- summarise(group_by(self$iterations_trained, id), eval=mean(eval), fit=list(fit), pred=list(pred))
-        res <- inner_join(res, self$params, by="id")
-        res <- bind_cols(res, map_dfr(res$param, as_tibble))
-        select(res, -param, -id)
-
-    }
-
   )
 )
 
@@ -224,7 +204,7 @@ Tweakr <- R6Class(
 #' @param func_predict Function to predict the out of fold data. The arguments must be `fit` and `test`.
 #' @param func_eval Function to evaluate predictions. The arguments must be `pred` and `test`.
 #' @param run Functions should be excecuted or not.
-#' @param ... Additional arguments for Tweakr
+#' @param ... Additional arguments for tweekr functions.
 #'
 #' @examples
 #'
@@ -251,6 +231,8 @@ tweakr <- function(train_set,
                    func_eval,
                    run=TRUE,
                    ...) {
+
+  params <- paramize(params, ...)
 
   twk <- Tweakr$new(train_set=train_set,
                     params=params,

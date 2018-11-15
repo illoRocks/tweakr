@@ -24,7 +24,7 @@ tweakr(train_set, params, k = 5, folds = NULL, func_train,
 
 \item{run}{Functions should be excecuted or not.}
 
-\item{...}{Additional arguments for Tweakr}
+\item{...}{Additional arguments for tweekr functions.}
 }
 \description{
 Parametertuning

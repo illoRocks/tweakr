@@ -4,7 +4,7 @@
 \alias{paramize}
 \title{paramize}
 \usage{
-paramize(params, search_method = "grid", search_len = NULL)
+paramize(params, search_method = "grid", search_len = NULL, ...)
 }
 \arguments{
 \item{params}{list containing parameters.}
@@ -12,6 +12,8 @@ paramize(params, search_method = "grid", search_len = NULL)
 \item{search_method}{search method can be grid or random.}
 
 \item{search_len}{length of random paramters.}
+
+\item{...}{not used}
 }
 \value{
 data.frame with parameters.
