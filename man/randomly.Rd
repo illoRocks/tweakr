@@ -4,15 +4,17 @@
 \alias{randomly}
 \title{randomly}
 \usage{
-randomly(data, method = "cv", ...)
+randomly(data, sample_method = "cv", k = 5, ...)
 }
 \arguments{
 \item{data}{Training data}
 
-\item{method}{Name of folding strategie.
+\item{sample_method}{Name of folding strategie.
 \itemize{
   \item \strong{cv} Cross-Validation. k can be choosen (Default: 5)
 }}
+
+\item{k}{Number of folds.}
 
 \item{...}{further arguments depends on the method.}
 }
