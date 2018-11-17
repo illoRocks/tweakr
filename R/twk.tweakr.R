@@ -8,9 +8,7 @@
 Tweakr <- R6Class("tweaker",
 
   private = list(
-    ..params = tibble(),
-    ..folds_in_train = NULL,
-    ..train_set = NULL
+    ..params = tibble()
   ),
 
   active = list(
@@ -23,15 +21,6 @@ Tweakr <- R6Class("tweaker",
 
     },
 
-    train_set = function(value) {
-
-      if (missing(value))
-        return(private$..train_set)
-
-      private$..train_set <- value
-
-    },
-
     params = function(value) {
 
       if (missing(value))
@@ -40,15 +29,6 @@ Tweakr <- R6Class("tweaker",
       private$..params <- pmap_dfr(value, function(...) {
         tibble(param=list(list(...)), id=paste(list(...), collapse="_"))
       })
-
-    },
-
-    folds_in_train = function(value) {
-
-      if (missing(value))
-        return(private$..folds_in_train)
-
-      private$..folds_in_train <- value
 
     },
 
@@ -72,14 +52,14 @@ Tweakr <- R6Class("tweaker",
     func_eval = NULL,
     verbose = NULL,
     iterations_trained = NULL,
+    train_set = NULL,
+    folds_in_train = NULL,
 
     initialize = function(train_set,
                           params,
                           func_train,
                           func_predict,
                           func_eval,
-                          k=5,
-                          sample_method="cv",
                           folds=NULL,
                           parallel_strategy=NULL,
                           verbose=1) {
@@ -90,8 +70,6 @@ Tweakr <- R6Class("tweaker",
       check_missing(func_predict)
       check_missing(func_eval)
       check_missing(params)
-      if (is.null(k) && is.null(folds))
-        stop("you have to specify `k` or `folds`")
 
       # check for wrong arguments
       check_arguments(func_train, c("train","param"))
@@ -105,18 +83,7 @@ Tweakr <- R6Class("tweaker",
       self$params <- params
       self$train_set <- train_set
       self$verbose <- verbose
-
-      # folds for cross validation
-      if(is.null(folds)) {
-        self$folds_in_train <- randomly(train_set, sample_method, k=k)
-      } else {
-        self$folds_in_train <- folds
-      }
-
-      # show infos
-      glat_if(self$verbose,
-             "folding strategy: {sample_method} (folds: {length(self$folds_in_train)})\n",
-             "number of iterations: {nrow(self$params)} (parameters) x {length(self$folds_in_train)} (folds)\n")
+      self$folds_in_train <- folds
 
     },
 
@@ -232,16 +199,22 @@ tweakr <- function(train_set,
                    run=TRUE,
                    ...) {
 
+  args <- list(...)
   params <- paramize(params, ...)
+  folds <- get_value(folds, randomly(train_set, k=k, ...))
+  verbose <- get_value(args$verbose, 1)
+
+  glat_if(verbose,
+          "folding strategy: {get_value(args$sample_method, 'cv')} (folds: {length(folds)})\n",
+          "number of iterations: {nrow(params)} (parameters) x {length(folds)} (folds)\n")
 
   twk <- Tweakr$new(train_set=train_set,
                     params=params,
-                    k=k,
                     folds=folds,
                     func_train=func_train,
                     func_predict=func_predict,
                     func_eval=func_eval,
-                    ...)
+                    verbose=verbose)
 
   if(run) {
     twk$train_model()
