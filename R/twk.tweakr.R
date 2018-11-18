@@ -1,9 +1,10 @@
 
 #' @importFrom R6 R6Class
 #' @importFrom tibble tibble as_tibble
-#' @importFrom dplyr mutate_if select summarise inner_join bind_cols group_by
+#' @importFrom dplyr mutate_if select summarise inner_join bind_cols group_by filter
 #' @importFrom purrr pmap_dfr map_dfr map_chr
 #' @importFrom progress progress_bar
+#' @importFrom readr write_rds
 
 Tweakr <- R6Class("tweaker",
 
@@ -26,9 +27,14 @@ Tweakr <- R6Class("tweaker",
       if (missing(value))
         return(private$..params)
 
-      private$..params <- pmap_dfr(value, function(...) {
+      if (is.null(value))
+        return(NULL)
+
+      new_params <- pmap_dfr(value, function(...) {
         tibble(param=list(list(...)), id=paste(list(...), collapse="_"))
       })
+
+      private$..params <- filter(new_params, !id %in% private$..params[["id"]])
 
     },
 
@@ -56,7 +62,7 @@ Tweakr <- R6Class("tweaker",
     folds_in_train = NULL,
 
     initialize = function(train_set,
-                          params,
+                          params=NULL,
                           func_train,
                           func_predict,
                           func_eval,
@@ -69,7 +75,6 @@ Tweakr <- R6Class("tweaker",
       check_missing(func_train)
       check_missing(func_predict)
       check_missing(func_eval)
-      check_missing(params)
 
       # check for wrong arguments
       check_arguments(func_train, c("train","param"))
@@ -80,10 +85,10 @@ Tweakr <- R6Class("tweaker",
       self$func_train <- func_train
       self$func_predict <- func_predict
       self$func_eval <- func_eval
-      self$params <- params
       self$train_set <- train_set
       self$verbose <- verbose
       self$folds_in_train <- folds
+      self$params <- params
 
     },
 
@@ -167,10 +172,11 @@ Tweakr <- R6Class("tweaker",
 #' @param params List of parameters
 #' @param k Number of folds.
 #' @param folds custom folds.
-#' @param func_train Function to train a model. The arguments must be `train` and `param`.
-#' @param func_predict Function to predict the out of fold data. The arguments must be `fit` and `test`.
-#' @param func_eval Function to evaluate predictions. The arguments must be `pred` and `test`.
-#' @param run Functions should be excecuted or not.
+#' @param func_train Function to train a model. The arguments must be `train` and `param` and return the fitted object.
+#' @param func_predict Function to predict the out of fold data. The arguments must be `fit` and `test` and return the predicted values.
+#' @param func_eval Function to evaluate predictions. The arguments must be `pred` and `test` and return a single metric.
+#' @param save_path The path where the model are stored. (Default: NULL)
+#' @param save_freq The frequence of model saving. (Defaut: 10)
 #' @param ... Additional arguments for tweekr functions.
 #'
 #' @examples
@@ -196,12 +202,13 @@ tweakr <- function(train_set,
                    func_train,
                    func_predict,
                    func_eval,
-                   run=TRUE,
+                   save_path=NULL,
+                   save_freq=10,
                    ...) {
 
   args <- list(...)
   params <- paramize(params, ...)
-  folds <- get_value(folds, randomly(train_set, k=k, ...))
+  folds <- if(is.null(folds)) randomly(train_set, k=k, ...) else folds
   verbose <- get_value(args$verbose, 1)
 
   glat_if(verbose,
@@ -209,22 +216,34 @@ tweakr <- function(train_set,
           "number of iterations: {nrow(params)} (parameters) x {length(folds)} (folds)\n")
 
   twk <- Tweakr$new(train_set=train_set,
-                    params=params,
                     folds=folds,
                     func_train=func_train,
                     func_predict=func_predict,
                     func_eval=func_eval,
                     verbose=verbose)
 
-  if(run) {
+  param_seq <- seq_len(nrow(params))
+  if (is.null(save_path))
+    param_indices <- list(param_seq)
+  else
+    param_indices <- split(param_seq, ceiling(param_seq/save_freq))
+
+  j <- 0
+  for (i in param_indices) {
+
+    twk$params <- params[i,]
+
     twk$train_model()
     twk$predict_model()
     twk$eval_model()
+
+    if (!is.null(save_path))
+      write_rds(twk, paste0(save_path))
+
   }
 
   invisible(twk)
 }
-
 
 
 

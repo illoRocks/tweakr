@@ -5,7 +5,7 @@
 \title{tweakr}
 \usage{
 tweakr(train_set, params, k = 5, folds = NULL, func_train,
-  func_predict, func_eval, run = TRUE, ...)
+  func_predict, func_eval, save_path = NULL, save_freq = 10, ...)
 }
 \arguments{
 \item{train_set}{Training data}
@@ -16,13 +16,15 @@ tweakr(train_set, params, k = 5, folds = NULL, func_train,
 
 \item{folds}{custom folds.}
 
-\item{func_train}{Function to train a model. The arguments must be `train` and `param`.}
+\item{func_train}{Function to train a model. The arguments must be `train` and `param` and return the fitted object.}
 
-\item{func_predict}{Function to predict the out of fold data. The arguments must be `fit` and `test`.}
+\item{func_predict}{Function to predict the out of fold data. The arguments must be `fit` and `test` and return the predicted values.}
 
-\item{func_eval}{Function to evaluate predictions. The arguments must be `pred` and `test`.}
+\item{func_eval}{Function to evaluate predictions. The arguments must be `pred` and `test` and return a single metric.}
 
-\item{run}{Functions should be excecuted or not.}
+\item{save_path}{The path where the model are stored. (Default: NULL)}
+
+\item{save_freq}{The frequence of model saving. (Defaut: 10)}
 
 \item{...}{Additional arguments for tweekr functions.}
 }

@@ -13,10 +13,11 @@ Suggests:
     testthat,
     rpart
 Imports:
-    R6,
-    tibble,
     dplyr,
-    purrr,
     glue,
-    progress
+    progress,
+    purrr,
+    R6,
+    readr,
+    tibble
 RoxygenNote: 6.1.0
