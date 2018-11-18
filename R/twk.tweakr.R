@@ -177,6 +177,7 @@ Tweakr <- R6Class("tweaker",
 #' @param func_eval Function to evaluate predictions. The arguments must be `pred` and `test` and return a single metric.
 #' @param save_path The path where the model are stored. (Default: NULL)
 #' @param save_freq The frequence of model saving. (Defaut: 10)
+#' @param twk_object tweakr object to continue training.
 #' @param ... Additional arguments for tweekr functions.
 #'
 #' @examples
@@ -204,6 +205,7 @@ tweakr <- function(train_set,
                    func_eval,
                    save_path=NULL,
                    save_freq=10,
+                   twk_object=NULL,
                    ...) {
 
   args <- list(...)
@@ -215,12 +217,16 @@ tweakr <- function(train_set,
           "folding strategy: {get_value(args$sample_method, 'cv')} (folds: {length(folds)})\n",
           "number of iterations: {nrow(params)} (parameters) x {length(folds)} (folds)\n")
 
-  twk <- Tweakr$new(train_set=train_set,
-                    folds=folds,
-                    func_train=func_train,
-                    func_predict=func_predict,
-                    func_eval=func_eval,
-                    verbose=verbose)
+  if (is.null(twk_object)) {
+    twk <- Tweakr$new(train_set=train_set,
+                      folds=folds,
+                      func_train=func_train,
+                      func_predict=func_predict,
+                      func_eval=func_eval,
+                      verbose=verbose)
+  } else {
+    twk <- twk_object
+  }
 
   param_seq <- seq_len(nrow(params))
   if (is.null(save_path))
@@ -228,7 +234,6 @@ tweakr <- function(train_set,
   else
     param_indices <- split(param_seq, ceiling(param_seq/save_freq))
 
-  j <- 0
   for (i in param_indices) {
 
     twk$params <- params[i,]

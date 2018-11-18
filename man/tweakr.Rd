@@ -5,7 +5,8 @@
 \title{tweakr}
 \usage{
 tweakr(train_set, params, k = 5, folds = NULL, func_train,
-  func_predict, func_eval, save_path = NULL, save_freq = 10, ...)
+  func_predict, func_eval, save_path = NULL, save_freq = 10,
+  twk_object = NULL, ...)
 }
 \arguments{
 \item{train_set}{Training data}
@@ -25,6 +26,8 @@ tweakr(train_set, params, k = 5, folds = NULL, func_train,
 \item{save_path}{The path where the model are stored. (Default: NULL)}
 
 \item{save_freq}{The frequence of model saving. (Defaut: 10)}
+
+\item{twk_object}{tweakr object to continue training.}
 
 \item{...}{Additional arguments for tweekr functions.}
 }
