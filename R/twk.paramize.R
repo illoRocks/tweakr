@@ -23,16 +23,16 @@ NULL
 paramize <- function(params, search_method="grid", search_len=NULL, ...) {
 
   if(is.data.frame(params))
-    return(params)
+    return(as_tibble(params))
 
   if(!is.list(params) && is.vector(params))
-    return(data.frame(param1=params))
+    return(tibble(param1=params))
 
   if(!is.list(params))
     stop("params should be a list, data.frame or vector")
 
   if(search_method=="grid")
-    return(expand.grid(params))
+    return(as_tibble(expand.grid(params)))
 
   if(search_method=="random") {
 
