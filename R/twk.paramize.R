@@ -1,5 +1,6 @@
 #' @importFrom purrr map map_dfc
 #' @importFrom dplyr select_if
+#' @importFrom tibble as_tibble
 NULL
 
 #' paramize
