@@ -20,9 +20,9 @@ test_that("train rpart with iris data", {
                 func_predict  = function(fit, test) predict(fit, test, type = "class"),
                 func_eval = function(pred, test) sum(pred == test$Species) / nrow(test))
 
-  expect_is(twk, "tweaker")
+  expect_is(twk, "tweakr")
   expect_is(twk$result, "data.frame")
-  expect_named(twk$result, c("eval","fit","pred","cp"))
+  expect_true(all(c("eval","fit","pred") %in% colnames(twk$result)))
   expect_equal(round(twk$result$eval, 2), c(0.92, 0.92))
   expect_length(twk$folds_in_train, 5)
   expect_length(twk2$folds_in_train, 50)
