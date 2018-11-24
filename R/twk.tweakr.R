@@ -6,7 +6,7 @@
 #' @importFrom progress progress_bar
 #' @importFrom readr write_rds
 
-Tweakr <- R6Class("tweaker",
+Tweakr <- R6Class("tweakr",
 
   private = list(
     ..params = tibble()
