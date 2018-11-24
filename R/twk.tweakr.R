@@ -1,7 +1,7 @@
 
 #' @importFrom R6 R6Class
 #' @importFrom tibble tibble as_tibble
-#' @importFrom dplyr mutate_if select summarise inner_join bind_cols group_by filter
+#' @importFrom dplyr mutate_if select summarise inner_join bind_cols group_by filter bind_rows arrange
 #' @importFrom purrr pmap_dfr map_dfr map_chr
 #' @importFrom progress progress_bar
 #' @importFrom readr write_rds
@@ -16,8 +16,8 @@ Tweakr <- R6Class("tweaker",
 
     iterations = function() {
 
-      pmap_dfr(self$params, function(id, param, ...) {
-        map_dfr(self$folds_in_train, function(in_train) tibble(id=id, param=list(param), in_train=list(in_train)))
+      pmap_dfr(self$params, function(.id, param, ...) {
+        map_dfr(self$folds_in_train, function(in_train) tibble(.id=.id, param=list(param), in_train=list(in_train)))
       })
 
     },
@@ -27,26 +27,24 @@ Tweakr <- R6Class("tweaker",
       if (missing(value))
         return(private$..params)
 
-      if (is.null(value))
-        return(NULL)
-
       new_params <- pmap_dfr(value, function(...) {
-        tibble(param=list(list(...)), id=paste(list(...), collapse="_"))
+        tibble(param=list(list(...)), .id=paste(list(...), collapse="_"))
       })
 
-      private$..params <- filter(new_params, !id %in% private$..params[["id"]])
+      private$..params <- filter(new_params, !.id %in% private$..params[[".id"]])
 
     },
+    result = function() {
 
-    result = function(value) {
+      res <- summarise(group_by(self$iterations_history, .id), eval=mean(eval), fit=list(fit), pred=list(pred), in_train=list(in_train))
+      res <- inner_join(res, self$params_history, by=".id")
+      bind_cols(res, map_dfr(res$param, as_tibble))
 
-      if (!missing(value))
-        stop("$result is read only")
+    },
+    best_fit = function() {
 
-      res <- summarise(group_by(self$iterations_trained, id), eval=mean(eval), fit=list(fit), pred=list(pred))
-      res <- inner_join(res, self$params, by="id")
-      res <- bind_cols(res, map_dfr(res$param, as_tibble))
-      select(res, -param, -id)
+      res <- arrange(self$result, eval)[1,]
+      list(eval=res$eval, param=res$param[[1]], fit=res$fit[[1]])
 
     }
 
@@ -58,6 +56,8 @@ Tweakr <- R6Class("tweaker",
     func_eval = NULL,
     verbose = NULL,
     iterations_trained = NULL,
+    iterations_history = tibble(),
+    params_history = tibble(),
     train_set = NULL,
     folds_in_train = NULL,
 
@@ -88,20 +88,22 @@ Tweakr <- R6Class("tweaker",
       self$train_set <- train_set
       self$verbose <- verbose
       self$folds_in_train <- folds
-      self$params <- params
+      if (!is.null(params)) self$params <- params
 
     },
 
     # train model
     train_model = function() {
 
+      glat_if(self$verbose, "start training ...")
+
       if(self$verbose)
         pb <- progress_bar$new(format="train model [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
 
-      do_train <- function(in_train, param, id, ...) {
+      do_train <- function(in_train, param, .id, ...) {
         fit <- self$func_train(self$train_set[in_train, ], param)
         if(self$verbose) pb$tick()
-        tibble(id=id, fit=list(fit), in_train=list(in_train))
+        tibble(.id=.id, fit=list(fit), in_train=list(in_train))
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations, do_train)
@@ -116,13 +118,15 @@ Tweakr <- R6Class("tweaker",
     # predict model
     predict_model = function() {
 
+      glat_if(self$verbose, "start prediction ...")
+
       if(self$verbose)
         pb <- progress_bar$new(format="predict test [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
 
-      do_predict <- function(in_train, param, id, fit, ...) {
+      do_predict <- function(in_train, param, .id, fit, ...) {
         pred <- self$func_predict(fit, (self$train_set[-in_train, ]))
         if(self$verbose) pb$tick()
-        tibble(id=id, in_train=list(in_train), fit=list(fit), pred=list(pred))
+        tibble(.id=.id, in_train=list(in_train), fit=list(fit), pred=list(pred))
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations_trained, do_predict)
@@ -135,16 +139,22 @@ Tweakr <- R6Class("tweaker",
     # eval model
     eval_model = function() {
 
+      glat_if(self$verbose, "start evaluation ...")
+
       if(self$verbose)
         pb <- progress_bar$new(format="evaluate model [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
 
-      do_eval <- function(in_train, param, id, fit, pred, ...) {
+      do_eval <- function(in_train, param, .id, fit, pred, ...) {
         eval <- self$func_eval(pred, self$train_set[-in_train, ])
+        if(length(unlist(eval)) > 1)
+          stop("`func_eval` must return a single numeric value")
         if(self$verbose) pb$tick()
-        tibble(id=id, in_train=list(in_train), fit=list(fit), pred=list(pred), eval=eval)
+        tibble(.id=.id, in_train=list(in_train), fit=list(fit), pred=list(pred), eval=eval)
       }
 
-      self$iterations_trained <- pmap_dfr(self$iterations_trained, do_eval)
+      self$iterations_history <- bind_rows(self$iterations_history,
+                                           pmap_dfr(self$iterations_trained, do_eval))
+      self$params_history <- bind_rows(self$params_history, self$params)
 
       if(self$verbose)
         pb$terminate()
@@ -243,7 +253,7 @@ tweakr <- function(train_set,
     twk$eval_model()
 
     if (!is.null(save_path))
-      write_rds(twk, paste0(save_path))
+      write_rds(twk, save_path)
 
   }
 
