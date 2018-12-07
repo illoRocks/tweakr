@@ -42,7 +42,7 @@ predict.tweakr <- function(object, new_data, type=NULL, func_predict=NULL, ...) 
   x <- map(object$best_fit$fit, func_predict, test=new_data)
   y <- do.call(cbind, x)
 
-  if(is.character(x[[1]]))
+  if(is.character(x[[1]]) || is.factor(x[[1]]))
     stop("`func_predict` should return numeric values. Use custom function in predict method.")
 
   if (is.vector(x[[1]])) {
