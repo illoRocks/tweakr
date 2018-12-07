@@ -20,6 +20,9 @@ test_that("train rpart with iris data", {
                 func_predict  = function(fit, test) predict(fit, test, type = "class"),
                 func_eval = function(pred, test) sum(pred == test$Species) / nrow(test))
 
+  prediction <- predict(twk, iris, func_predict = function(fit, test) predict(fit, test, type = "prob"))
+
+  expect_error(predict(twk, iris), regexp="`func_predict` should return numeric values. Use custom function in predict method.")
   expect_is(twk, "tweakr")
   expect_is(twk$result, "data.frame")
   expect_true(all(c("eval","fit","pred") %in% colnames(twk$result)))
@@ -69,7 +72,7 @@ test_that("test missing arguments in tweakr", {
 
 })
 
-test_that("test tweak_sample", {
+test_that("test randomly", {
 
   folds1 <- randomly(iris,"cv", k=30)
   folds2 <- randomly(iris)
