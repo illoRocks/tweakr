@@ -25,6 +25,16 @@ NULL
 #' @export
 paramize <- function(params, search_method="grid", search_len=5, ...) {
 
+  convert_types <- function(x) {
+    print(x)
+    x <- mutate_at(x, vars(ends_with('.int')), as.integer)
+    x <- mutate_at(x, vars(ends_with('.dbl')), as.integer)
+    x <- mutate_at(x, vars(ends_with('.chr')), as.character)
+    x <- mutate_at(x, vars(ends_with('.fct')), as.factor)
+    colnames(x) <- str_remove(colnames(x), ".int|.dbl|.chr|.fct")
+    x
+  }
+
   if(is.data.frame(params))
     return(as_tibble(params))
 
@@ -34,8 +44,11 @@ paramize <- function(params, search_method="grid", search_len=5, ...) {
   if(!is.list(params))
     stop("params should be a list, data.frame or vector")
 
-  if(search_method=="grid")
-    return(mutate_if(as_tibble(expand.grid(params)), is.factor, as.character))
+  if(search_method=="grid") {
+    res <- mutate_if(as_tibble(expand.grid(params)), is.factor, as.character)
+    res <- convert_types(res)
+    return(res)
+  }
 
   if(search_method=="random") {
 
@@ -46,12 +59,7 @@ paramize <- function(params, search_method="grid", search_len=5, ...) {
     res <- bind_cols(map_dfc(select_if(params,is.numeric), ~runif(search_len, min(.x), max(.x))),
                      map_dfc(select_if(params,~!is.numeric(.x)), sample, size=search_len, replace = T))
 
-    res <- mutate_at(res, vars(ends_with('.int')), as.integer)
-    res <- mutate_at(res, vars(ends_with('.dbl')), as.integer)
-    res <- mutate_at(res, vars(ends_with('.chr')), as.character)
-    res <- mutate_at(res, vars(ends_with('.fct')), as.factor)
-
-    colnames(res) <- str_remove(colnames(res), ".int|.dbl|.chr|.fct")
+    res <- convert_types(res)
 
     return(res)
   }
