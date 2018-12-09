@@ -4,7 +4,7 @@
 \alias{paramize}
 \title{paramize}
 \usage{
-paramize(params, search_method = "grid", search_len = NULL, ...)
+paramize(params, search_method = "grid", search_len = 5, ...)
 }
 \arguments{
 \item{params}{list containing parameters.}

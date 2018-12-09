@@ -19,13 +19,13 @@ check_missing <- function(value) {
   return(NULL)
 }
 
-# if null then get default value
-get_value <- function(val, default) {
-
-  if(is.null(val))
-    return(default)
-  else
-    return(val)
+# if null or missing then get default value
+get_value <- function(val, default=NA, envir = parent.frame()) {
+  res <- tryCatch(
+    val,
+    error = function(e) NULL
+  )
+  return(res)
 }
 
 # print in dependecne of the condition

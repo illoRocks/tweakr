@@ -73,8 +73,8 @@ Tweakr <- R6Class("tweakr",
       # check for missing values
       check_missing(train_set)
       check_missing(func_train)
-      check_missing(func_predict)
-      check_missing(func_eval)
+      # check_missing(func_predict)
+      # check_missing(func_eval)
 
       # check for wrong arguments
       check_arguments(func_train, c("train","param"))
@@ -101,9 +101,15 @@ Tweakr <- R6Class("tweakr",
         pb <- progress_bar$new(format="train model [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
 
       do_train <- function(in_train, param, .id, ...) {
-        fit <- self$func_train(self$train_set[in_train, ], param)
+        res <- self$func_train(self$train_set[in_train, ], param, ...)
+
         if(self$verbose) pb$tick()
-        tibble(.id=.id, fit=list(fit), in_train=list(in_train))
+
+        tibble(.id=.id,
+               in_train=list(in_train),
+               fit=list(res[["fit"]]),
+               pred=list(res[["pred"]]),
+               eval=res[["eval"]])
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations, do_train)
@@ -111,7 +117,7 @@ Tweakr <- R6Class("tweakr",
       if(self$verbose)
         pb$terminate()
 
-      if(any(map_chr(self$iterations_trained$fit, class) %in% c("numeric","character")))
+      if(any(unlist(map(self$iterations_trained$fit, class)) %in% c("numeric","character")))
         warning("returned element of train function is not a model")
     },
 
@@ -161,9 +167,9 @@ Tweakr <- R6Class("tweakr",
 
     },
 
-    print = function() {
+    print = function(...) {
 
-      print(self$result)
+      print(select(self$result, -.id), ...)
 
       invisible(self)
     }

@@ -24,6 +24,9 @@ NULL
 #' @export
 randomly <- function(data, sample_method="cv", k=5, ...) {
 
+  if(k == 1)
+    return(1:nrow(data))
+
   if (sample_method=="cv") {
 
     n <- nrow(data)

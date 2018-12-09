@@ -19,5 +19,6 @@ Imports:
     purrr,
     R6,
     readr,
-    tibble
+    tibble,
+    stringr
 RoxygenNote: 6.1.0

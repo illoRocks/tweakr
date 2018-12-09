@@ -1,6 +1,8 @@
 #' @importFrom purrr map map_dfc
-#' @importFrom dplyr select_if
+#' @importFrom dplyr select_if mutate_at vars ends_with
 #' @importFrom tibble as_tibble
+#' @importFrom stringr str_remove
+#'
 NULL
 
 #' paramize
@@ -21,7 +23,7 @@ NULL
 #' paramize(list(a=c("c","d"),b=c(3,4)), "random", 10)
 #'
 #' @export
-paramize <- function(params, search_method="grid", search_len=NULL, ...) {
+paramize <- function(params, search_method="grid", search_len=5, ...) {
 
   if(is.data.frame(params))
     return(as_tibble(params))
@@ -33,7 +35,7 @@ paramize <- function(params, search_method="grid", search_len=NULL, ...) {
     stop("params should be a list, data.frame or vector")
 
   if(search_method=="grid")
-    return(as_tibble(expand.grid(params)))
+    return(mutate_if(as_tibble(expand.grid(params)), is.factor, as.character))
 
   if(search_method=="random") {
 
@@ -43,6 +45,14 @@ paramize <- function(params, search_method="grid", search_len=NULL, ...) {
     params <- as_tibble(params)
     res <- bind_cols(map_dfc(select_if(params,is.numeric), ~runif(search_len, min(.x), max(.x))),
                      map_dfc(select_if(params,~!is.numeric(.x)), sample, size=search_len, replace = T))
+
+    res <- mutate_at(res, vars(ends_with('.int')), as.integer)
+    res <- mutate_at(res, vars(ends_with('.dbl')), as.integer)
+    res <- mutate_at(res, vars(ends_with('.chr')), as.character)
+    res <- mutate_at(res, vars(ends_with('.fct')), as.factor)
+
+    colnames(res) <- str_remove(colnames(res), ".int|.dbl|.chr|.fct")
+
     return(res)
   }
 
