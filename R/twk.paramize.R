@@ -26,6 +26,10 @@ NULL
 paramize <- function(params, search_method="grid", search_len=5, ...) {
 
   convert_types <- function(x) {
+<<<<<<< HEAD
+=======
+    print(x)
+>>>>>>> 34189efd576f245f454772afc20a1342e6ee781b
     x <- mutate_at(x, vars(ends_with('.int')), as.integer)
     x <- mutate_at(x, vars(ends_with('.dbl')), as.integer)
     x <- mutate_at(x, vars(ends_with('.chr')), as.character)
