@@ -4,24 +4,19 @@
 \alias{tweakr}
 \title{tweakr}
 \usage{
-tweakr(train_set, params, k = 5, folds = NULL, func_train,
-  func_predict, func_eval, save_path = NULL, save_freq = 10,
-  twk_object = NULL, ...)
+tweakr(train_set, params, func_train, k = 5, folds = NULL,
+  save_path = NULL, save_freq = 10, twk_object = NULL, ...)
 }
 \arguments{
 \item{train_set}{Training data}
 
 \item{params}{List of parameters}
 
+\item{func_train}{Function to train a model. The arguments must be `train` and `param` and return the fitted object.}
+
 \item{k}{Number of folds.}
 
 \item{folds}{custom folds.}
-
-\item{func_train}{Function to train a model. The arguments must be `train` and `param` and return the fitted object.}
-
-\item{func_predict}{Function to predict the out of fold data. The arguments must be `fit` and `test` and return the predicted values.}
-
-\item{func_eval}{Function to evaluate predictions. The arguments must be `pred` and `test` and return a single metric.}
 
 \item{save_path}{The path where the model are stored. (Default: NULL)}
 
@@ -30,6 +25,10 @@ tweakr(train_set, params, k = 5, folds = NULL, func_train,
 \item{twk_object}{tweakr object to continue training.}
 
 \item{...}{Additional arguments for tweekr functions.}
+
+\item{func_predict}{Function to predict the out of fold data. The arguments must be `fit` and `test` and return the predicted values.}
+
+\item{func_eval}{Function to evaluate predictions. The arguments must be `pred` and `test` and return a single metric.}
 }
 \description{
 Parametertuning
@@ -42,14 +41,18 @@ Parametrtuning for custom models.
 library(rpart)
 set.seed(123)
 
-twk <- tweakr(train_set = iris,
-              params = list(cp=c(.01,.05)),
-              k = 5,
-              func_train = function(train, param)
-                rpart(Species~. , train, control = rpart.control(cp = param$cp)),
-              func_predict  = function(fit, test)
-                predict(fit, test, type = "class"),
-              func_eval = function(pred, test)
-                sum(pred == test$Species) / nrow(test))
+ twk <- tweakr(train_set = iris,
+params = list(cp=c(.01,.05)),
+k = 10,
+func_train = function(param, train, test) {
+  model <- rpart(Species~. , train, control = rpart.control(cp = param$cp))
+  pred <- predict(model, test, type = "class")
+  error <- sum(pred == test$Species) / nrow(test)
+  list(fit=model, pred=pred, eval=error)
+})
+
+prediction <- predict(twk,
+                      iris,
+                      func_predict = function(fit, test) predict(fit, test, type = "prob"))
 
 }
