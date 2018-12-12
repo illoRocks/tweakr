@@ -6,8 +6,8 @@
 #' @importFrom progress progress_bar
 #' @importFrom readr write_rds
 
-Tweakr <- R6Class("tweakr",
-
+Tweakr <- R6Class(
+  "tweakr",
   private = list(
     ..params = tibble()
   ),
@@ -52,8 +52,6 @@ Tweakr <- R6Class("tweakr",
   public = list(
 
     func_train = NULL,
-    func_predict = NULL,
-    func_eval = NULL,
     verbose = NULL,
     iterations_trained = NULL,
     iterations_history = tibble(),
@@ -64,27 +62,17 @@ Tweakr <- R6Class("tweakr",
     initialize = function(train_set,
                           params=NULL,
                           func_train,
-                          func_predict,
-                          func_eval,
                           folds=NULL,
                           parallel_strategy=NULL,
                           verbose=1) {
 
-      # check for missing values
+      # check parameters
       check_missing(train_set)
       check_missing(func_train)
-      # check_missing(func_predict)
-      # check_missing(func_eval)
-
-      # check for wrong arguments
-      check_arguments(func_train, c("train","param"))
-      check_arguments(func_predict, c("fit","test"))
-      check_arguments(func_eval, c("pred","test"))
+      check_arguments(func_train, c("param","train","test"))
 
       # assign arguments
       self$func_train <- func_train
-      self$func_predict <- func_predict
-      self$func_eval <- func_eval
       self$train_set <- train_set
       self$verbose <- verbose
       self$folds_in_train <- folds
@@ -101,7 +89,7 @@ Tweakr <- R6Class("tweakr",
         pb <- progress_bar$new(format="train model [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
 
       do_train <- function(in_train, param, .id, ...) {
-        res <- self$func_train(self$train_set[in_train, ], param, ...)
+        res <- self$func_train(param, self$train_set[in_train, ], self$train_set[-in_train, ], ...)
 
         if(self$verbose) pb$tick()
 
@@ -109,62 +97,18 @@ Tweakr <- R6Class("tweakr",
                in_train=list(in_train),
                fit=list(res[["fit"]]),
                pred=list(res[["pred"]]),
-               eval=res[["eval"]])
+               eval=get_value(res[["eval"]]))
       }
 
       self$iterations_trained <- pmap_dfr(self$iterations, do_train)
 
-      if(self$verbose)
-        pb$terminate()
-
-      if(any(unlist(map(self$iterations_trained$fit, class)) %in% c("numeric","character")))
-        warning("returned element of train function is not a model")
-    },
-
-    # predict model
-    predict_model = function() {
-
-      glat_if(self$verbose, "start prediction ...")
-
-      if(self$verbose)
-        pb <- progress_bar$new(format="predict test [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
-
-      do_predict <- function(in_train, param, .id, fit, ...) {
-        pred <- self$func_predict(fit, (self$train_set[-in_train, ]))
-        if(self$verbose) pb$tick()
-        tibble(.id=.id, in_train=list(in_train), fit=list(fit), pred=list(pred))
-      }
-
-      self$iterations_trained <- pmap_dfr(self$iterations_trained, do_predict)
-
-      if(self$verbose)
-        pb$terminate()
-
-    },
-
-    # eval model
-    eval_model = function() {
-
-      glat_if(self$verbose, "start evaluation ...")
-
-      if(self$verbose)
-        pb <- progress_bar$new(format="evaluate model [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
-
-      do_eval <- function(in_train, param, .id, fit, pred, ...) {
-        eval <- self$func_eval(pred, self$train_set[-in_train, ])
-        if(length(unlist(eval)) > 1)
-          stop("`func_eval` must return a single numeric value")
-        if(self$verbose) pb$tick()
-        tibble(.id=.id, in_train=list(in_train), fit=list(fit), pred=list(pred), eval=eval)
-      }
-
       self$iterations_history <- bind_rows(self$iterations_history,
-                                           pmap_dfr(self$iterations_trained, do_eval))
+                                           self$iterations_trained)
+
       self$params_history <- bind_rows(self$params_history, self$params)
 
       if(self$verbose)
         pb$terminate()
-
     },
 
     print = function(...) {
@@ -188,9 +132,7 @@ Tweakr <- R6Class("tweakr",
 #' @param params List of parameters
 #' @param k Number of folds.
 #' @param folds custom folds.
-#' @param func_train Function to train a model. The arguments must be `train` and `param` and return the fitted object.
-#' @param func_predict Function to predict the out of fold data. The arguments must be `fit` and `test` and return the predicted values.
-#' @param func_eval Function to evaluate predictions. The arguments must be `pred` and `test` and return a single metric.
+#' @param func_train Function to train a model. The arguments must be `param`, `train` and `test` and return the fitted object.
 #' @param save_path The path where the model are stored. (Default: NULL)
 #' @param save_freq The frequence of model saving. (Defaut: 10)
 #' @param twk_object tweakr object to continue training.
@@ -201,24 +143,26 @@ Tweakr <- R6Class("tweakr",
 #' library(rpart)
 #' set.seed(123)
 #'
-#' twk <- tweakr(train_set = iris,
-#'               params = list(cp=c(.01,.05)),
-#'               k = 5,
-#'               func_train = function(train, param)
-#'                 rpart(Species~. , train, control = rpart.control(cp = param$cp)),
-#'               func_predict  = function(fit, test)
-#'                 predict(fit, test, type = "class"),
-#'               func_eval = function(pred, test)
-#'                 sum(pred == test$Species) / nrow(test))
+#'  twk <- tweakr(train_set = iris,
+#' params = list(cp=c(.01,.05)),
+#' k = 10,
+#' func_train = function(param, train, test) {
+#'   model <- rpart(Species~. , train, control = rpart.control(cp = param$cp))
+#'   pred <- predict(model, test, type = "class")
+#'   error <- sum(pred == test$Species) / nrow(test)
+#'   list(fit=model, pred=pred, eval=error)
+#' })
+#'
+#' prediction <- predict(twk,
+#'                       iris,
+#'                       func_predict = function(fit, test) predict(fit, test, type = "prob"))
 #'
 #' @export
 tweakr <- function(train_set,
                    params,
+                   func_train,
                    k=5,
                    folds=NULL,
-                   func_train,
-                   func_predict,
-                   func_eval,
                    save_path=NULL,
                    save_freq=10,
                    twk_object=NULL,
@@ -237,8 +181,6 @@ tweakr <- function(train_set,
     twk <- Tweakr$new(train_set=train_set,
                       folds=folds,
                       func_train=func_train,
-                      func_predict=func_predict,
-                      func_eval=func_eval,
                       verbose=verbose)
   } else {
     twk <- twk_object
@@ -255,8 +197,6 @@ tweakr <- function(train_set,
     twk$params <- params[i,]
 
     twk$train_model()
-    twk$predict_model()
-    twk$eval_model()
 
     if (!is.null(save_path))
       write_rds(twk, save_path)

@@ -21,10 +21,15 @@ check_missing <- function(value) {
 
 # if null or missing then get default value
 get_value <- function(val, default=NA, envir = parent.frame()) {
+
   res <- tryCatch(
     val,
     error = function(e) NULL
   )
+
+  if(is.null(res))
+    return(default)
+
   return(res)
 }
 
