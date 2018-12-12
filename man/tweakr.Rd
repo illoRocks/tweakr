@@ -12,7 +12,7 @@ tweakr(train_set, params, func_train, k = 5, folds = NULL,
 
 \item{params}{List of parameters}
 
-\item{func_train}{Function to train a model. The arguments must be `train` and `param` and return the fitted object.}
+\item{func_train}{Function to train a model. The arguments must be `param`, `train` and `test` and return the fitted object.}
 
 \item{k}{Number of folds.}
 
@@ -25,10 +25,6 @@ tweakr(train_set, params, func_train, k = 5, folds = NULL,
 \item{twk_object}{tweakr object to continue training.}
 
 \item{...}{Additional arguments for tweekr functions.}
-
-\item{func_predict}{Function to predict the out of fold data. The arguments must be `fit` and `test` and return the predicted values.}
-
-\item{func_eval}{Function to evaluate predictions. The arguments must be `pred` and `test` and return a single metric.}
 }
 \description{
 Parametertuning
