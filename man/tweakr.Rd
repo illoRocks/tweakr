@@ -8,9 +8,9 @@ tweakr(train_set, params, func_train, k = 5, folds = NULL,
   save_path = NULL, save_freq = 10, twk_object = NULL, ...)
 }
 \arguments{
-\item{train_set}{Training data}
+\item{train_set}{Training data.}
 
-\item{params}{List of parameters}
+\item{params}{List of parameters.}
 
 \item{func_train}{Function to train a model. The arguments must be `param`, `train` and `test` and return the fitted object.}
 

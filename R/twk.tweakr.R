@@ -122,20 +122,20 @@ Tweakr <- R6Class(
 #'
 #' @param train_set Training data.
 #' @param params List of parameters.
-#' @param k Number of folds.
-#' @param folds custom folds.
+#' @param k Number of folds (Default: 5).
+#' @param folds custom folds (Default: NULL).
 #' @param func_train Function to train a model. The arguments must be `param`, `train` and `test` and return the fitted object.
-#' @param save_path The path where the model are stored. (Default: NULL)
+#' @param save_path The path where the model are stored (Default: NULL).
 #' @param save_freq The frequence of model saving. (Defaut: 10)
-#' @param twk_object tweakr object to continue training.
-#' @param ... Additional arguments for tweekr functions.
+#' @param twk_object tweakr object to continue training (Default: NULL).
+#' @param ... Additional arguments for tweakr functions.
 #'
 #' @examples
 #'
 #' library(rpart)
 #' set.seed(123)
 #'
-#'  twk <- tweakr(train_set = iris,
+#' twk <- tweakr(train_set = iris,
 #' params = list(cp=c(.01,.05)),
 #' k = 10,
 #' func_train = function(param, train, test) {
