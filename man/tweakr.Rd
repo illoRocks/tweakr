@@ -14,17 +14,17 @@ tweakr(train_set, params, func_train, k = 5, folds = NULL,
 
 \item{func_train}{Function to train a model. The arguments must be `param`, `train` and `test` and return the fitted object.}
 
-\item{k}{Number of folds.}
+\item{k}{Number of folds (Default: 5).}
 
-\item{folds}{custom folds.}
+\item{folds}{custom folds (Default: NULL).}
 
-\item{save_path}{The path where the model are stored. (Default: NULL)}
+\item{save_path}{The path where the model are stored (Default: NULL).}
 
 \item{save_freq}{The frequence of model saving. (Defaut: 10)}
 
-\item{twk_object}{tweakr object to continue training.}
+\item{twk_object}{tweakr object to continue training (Default: NULL).}
 
-\item{...}{Additional arguments for tweekr functions.}
+\item{...}{Additional arguments for tweakr functions.}
 }
 \description{
 Parametertuning
@@ -37,7 +37,7 @@ Parametrtuning for custom models.
 library(rpart)
 set.seed(123)
 
- twk <- tweakr(train_set = iris,
+twk <- tweakr(train_set = iris,
 params = list(cp=c(.01,.05)),
 k = 10,
 func_train = function(param, train, test) {
