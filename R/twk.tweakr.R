@@ -3,7 +3,6 @@
 #' @importFrom tibble tibble as_tibble
 #' @importFrom dplyr mutate_if select summarise inner_join bind_cols group_by filter bind_rows arrange
 #' @importFrom purrr pmap_dfr map_dfr map_chr
-#' @importFrom progress progress_bar
 #' @importFrom readr write_rds
 
 Tweakr <- R6Class(
@@ -85,13 +84,8 @@ Tweakr <- R6Class(
 
       glat_if(self$verbose, "start training ...")
 
-      if(self$verbose)
-        pb <- progress_bar$new(format="train model [:bar] :percent current: :current  eta: :eta", total = nrow(self$iterations))
-
       do_train <- function(in_train, param, .id, ...) {
         res <- self$func_train(param, self$train_set[in_train, ], self$train_set[-in_train, ], ...)
-
-        if(self$verbose) pb$tick()
 
         tibble(.id=.id,
                in_train=list(in_train),
@@ -107,8 +101,6 @@ Tweakr <- R6Class(
 
       self$params_history <- bind_rows(self$params_history, self$params)
 
-      if(self$verbose)
-        pb$terminate()
     },
 
     print = function(...) {
@@ -128,8 +120,8 @@ Tweakr <- R6Class(
 #'
 #' Parametrtuning for custom models.
 #'
-#' @param train_set Training data
-#' @param params List of parameters
+#' @param train_set Training data.
+#' @param params List of parameters.
 #' @param k Number of folds.
 #' @param folds custom folds.
 #' @param func_train Function to train a model. The arguments must be `param`, `train` and `test` and return the fitted object.
