@@ -35,7 +35,7 @@ Tweakr <- R6Class(
     },
     result = function() {
 
-      res <- summarise(group_by(self$iterations_history, .id), eval=mean(eval), fit=list(fit), pred=list(pred), in_train=list(in_train))
+      res <- summarise(group_by(self$iterations_history, .id), eval=mean(eval), fit=list(fit), pred=list(pred))
       res <- inner_join(res, self$params_history, by=".id")
       bind_cols(res, map_dfr(res$param, as_tibble))
 
@@ -88,7 +88,6 @@ Tweakr <- R6Class(
         res <- self$func_train(param, self$train_set[in_train, ], self$train_set[-in_train, ], ...)
 
         tibble(.id=.id,
-               in_train=list(in_train),
                fit=list(res[["fit"]]),
                pred=list(res[["pred"]]),
                eval=get_value(res[["eval"]]))
