@@ -24,7 +24,7 @@ test_that("train rpart with iris data", {
   expect_is(twk, "tweakr")
   expect_is(twk$result, "data.frame")
   expect_true(all(c("eval","fit","pred") %in% colnames(twk$result)))
-  expect_equal(round(twk$result$eval, 2), c(0.93, 0.93))
+  expect_equal(round(twk$result$eval, 2), c(0.94, 0.95))
   expect_length(twk$folds_in_train, 10)
 
 })

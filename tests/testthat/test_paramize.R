@@ -12,3 +12,12 @@ test_that("test paramize",{
   expect_equal(nrow(paramize(params3)), 3)
   expect_equal(nrow(paramize(params4, search_method="random", search_len=10)), 10)
 })
+
+test_that("test paramize types",{
+
+  params <- paramize(list(a.dbl=c(0, 1), b.int=c(0, 1)), search_method = "random")
+
+  expect_type(params$a, "double")
+  expect_type(params$b, "integer")
+
+})
