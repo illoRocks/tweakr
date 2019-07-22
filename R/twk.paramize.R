@@ -27,7 +27,7 @@ paramize <- function(params, search_method="grid", search_len=5, ...) {
 
   convert_types <- function(x) {
     x <- mutate_at(x, vars(ends_with('.int')), as.integer)
-    x <- mutate_at(x, vars(ends_with('.dbl')), as.integer)
+    x <- mutate_at(x, vars(ends_with('.dbl')), as.double)
     x <- mutate_at(x, vars(ends_with('.chr')), as.character)
     x <- mutate_at(x, vars(ends_with('.fct')), as.factor)
     colnames(x) <- str_remove(colnames(x), ".int|.dbl|.chr|.fct")
@@ -63,7 +63,7 @@ paramize <- function(params, search_method="grid", search_len=5, ...) {
     return(res)
   }
 
-  warning("Wrong arguments! Return NULL")
+  warning("Wrong search_method in paramize!")
   NULL
 }
 
